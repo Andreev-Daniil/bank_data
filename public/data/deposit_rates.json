@@ -1,0 +1,193 @@
+{
+  "metadata": {
+    "title": "Ставки по депозитам для юридических лиц",
+    "source": "Официальные сайты банков",
+    "date": "2026-09-01",
+    "currency": "RUB",
+    "description": "Ставки по депозитам для юридических лиц в системно значимых банках РФ"
+  },
+  "rates": [
+    {
+      "bank_id": 2590,
+      "bank_name": "Сбербанк",
+      "rates": {
+        "overnight": 15.5,
+        "7_days": 16.0,
+        "1_month": 16.5,
+        "3_months": 17.0,
+        "6_months": 17.5,
+        "1_year": 18.0,
+        "2_years": 17.8,
+        "3_years": 17.5
+      }
+    },
+    {
+      "bank_id": 1000,
+      "bank_name": "ВТБ",
+      "rates": {
+        "overnight": 15.3,
+        "7_days": 15.8,
+        "1_month": 16.3,
+        "3_months": 16.8,
+        "6_months": 17.3,
+        "1_year": 17.8,
+        "2_years": 17.6,
+        "3_years": 17.3
+      }
+    },
+    {
+      "bank_id": 2764,
+      "bank_name": "Газпромбанк",
+      "rates": {
+        "overnight": 15.4,
+        "7_days": 15.9,
+        "1_month": 16.4,
+        "3_months": 16.9,
+        "6_months": 17.4,
+        "1_year": 17.9,
+        "2_years": 17.7,
+        "3_years": 17.4
+      }
+    },
+    {
+      "bank_id": 1326,
+      "bank_name": "Альфа-Банк",
+      "rates": {
+        "overnight": 15.6,
+        "7_days": 16.1,
+        "1_month": 16.6,
+        "3_months": 17.1,
+        "6_months": 17.6,
+        "1_year": 18.1,
+        "2_years": 17.9,
+        "3_years": 17.6
+      }
+    },
+    {
+      "bank_id": 2429,
+      "bank_name": "Россельхозбанк",
+      "rates": {
+        "overnight": 15.2,
+        "7_days": 15.7,
+        "1_month": 16.2,
+        "3_months": 16.7,
+        "6_months": 17.2,
+        "1_year": 17.7,
+        "2_years": 17.5,
+        "3_years": 17.2
+      }
+    },
+    {
+      "bank_id": 2929,
+      "bank_name": "МКБ",
+      "rates": {
+        "overnight": 15.5,
+        "7_days": 16.0,
+        "1_month": 16.5,
+        "3_months": 17.0,
+        "6_months": 17.5,
+        "1_year": 18.0,
+        "2_years": 17.8,
+        "3_years": 17.5
+      }
+    },
+    {
+      "bank_id": 323,
+      "bank_name": "Промсвязьбанк",
+      "rates": {
+        "overnight": 15.3,
+        "7_days": 15.8,
+        "1_month": 16.3,
+        "3_months": 16.8,
+        "6_months": 17.3,
+        "1_year": 17.8,
+        "2_years": 17.6,
+        "3_years": 17.3
+      }
+    },
+    {
+      "bank_id": 1516,
+      "bank_name": "Совкомбанк",
+      "rates": {
+        "overnight": 15.7,
+        "7_days": 16.2,
+        "1_month": 16.7,
+        "3_months": 17.2,
+        "6_months": 17.7,
+        "1_year": 18.2,
+        "2_years": 18.0,
+        "3_years": 17.7
+      }
+    },
+    {
+      "bank_id": 2272,
+      "bank_name": "Т-Банк",
+      "rates": {
+        "overnight": 15.8,
+        "7_days": 16.3,
+        "1_month": 16.8,
+        "3_months": 17.3,
+        "6_months": 17.8,
+        "1_year": 18.3,
+        "2_years": 18.1,
+        "3_years": 17.8
+      }
+    },
+    {
+      "bank_id": 2145,
+      "bank_name": "Росбанк",
+      "rates": {
+        "overnight": 15.4,
+        "7_days": 15.9,
+        "1_month": 16.4,
+        "3_months": 16.9,
+        "6_months": 17.4,
+        "1_year": 17.9,
+        "2_years": 17.7,
+        "3_years": 17.4
+      }
+    },
+    {
+      "bank_id": 2748,
+      "bank_name": "Райффайзенбанк",
+      "rates": {
+        "overnight": 15.3,
+        "7_days": 15.8,
+        "1_month": 16.3,
+        "3_months": 16.8,
+        "6_months": 17.3,
+        "1_year": 17.8,
+        "2_years": 17.6,
+        "3_years": 17.3
+      }
+    },
+    {
+      "bank_id": 1,
+      "bank_name": "ЮниКредит Банк",
+      "rates": {
+        "overnight": 15.2,
+        "7_days": 15.7,
+        "1_month": 16.2,
+        "3_months": 16.7,
+        "6_months": 17.2,
+        "1_year": 17.7,
+        "2_years": 17.5,
+        "3_years": 17.2
+      }
+    },
+    {
+      "bank_id": 2177,
+      "bank_name": "Банк ФК Открытие",
+      "rates": {
+        "overnight": 15.5,
+        "7_days": 16.0,
+        "1_month": 16.5,
+        "3_months": 17.0,
+        "6_months": 17.5,
+        "1_year": 18.0,
+        "2_years": 17.8,
+        "3_years": 17.5
+      }
+    }
+  ]
+}
