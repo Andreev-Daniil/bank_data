@@ -1,36 +1,115 @@
 """
-Парсер финансовых показателей Газпромбанка с сайта banki.ru
-Данные: с 2022 года по текущий момент
+Парсер финансовых показателей системно значимых кредитных организаций (СЗКО) РФ
+с сайта banki.ru и расчёт нормативов достаточности капитала (Н1.0, Н1.1, Н1.2).
 
-Использует внутренний API banki.ru для получения данных.
+Перечень СЗКО утверждается ЦБ РФ.
+Данные: с 2022 года по текущий момент (ежеквартально).
+
+Нормативы (Базель III / ЦБ РФ):
+  Н1.0 = Капитал / Активы × 100% ≥ 12.5% (для СЗКО)
+  Н1.1 = Основной капитал / Активы × 100% ≥ 9.0% (для СЗКО)
+  Н1.2 = Дополнительный капитал / Активы × 100% ≥ 3.5% (для СЗКО)
 """
 
 import requests
 import json
 import csv
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from bs4 import BeautifulSoup
 
-# Конфигурация
-BANK_ID = 2764  # Газпромбанк
-BANK_NAME = "Газпромбанк"
+# ============================================================
+# КОНФИГУРАЦИЯ
+# ============================================================
+
+# Системно значимые кредитные организации (перечень ЦБ РФ)
+SYSTEMIC_BANKS = [
+    {"bank_id": 2590, "name": "Сбербанк", "alias": "sberbank"},
+    {"bank_id": 1000, "name": "ВТБ", "alias": "vtb"},
+    {"bank_id": 2764, "name": "Газпромбанк", "alias": "gazprombank"},
+    {"bank_id": 1326, "name": "Альфа-Банк", "alias": "alfabank"},
+    {"bank_id": 2429, "name": "Россельхозбанк", "alias": "rshb"},
+    {"bank_id": 2929, "name": "МКБ", "alias": "mkb"},
+    {"bank_id": 323, "name": "Промсвязьбанк", "alias": "psb"},
+    {"bank_id": 1516, "name": "Совкомбанк", "alias": "sovcombank"},
+    {"bank_id": 2272, "name": "Т-Банк", "alias": "tbank"},
+    {"bank_id": 2145, "name": "Росбанк", "alias": "rosbank"},
+    {"bank_id": 2748, "name": "Райффайзенбанк", "alias": "raiffeisen"},
+    {"bank_id": 1, "name": "ЮниКредит Банк", "alias": "unicredit"},
+    {"bank_id": 2177, "name": "Банк ФК Открытие", "alias": "fk-otkritie"},
+]
+
+# Нормативные значения для СЗКО (Положение ЦБ РФ № 2024-У)
+NORMATIVE_MIN = {
+    "N1_0": 12.5,  # 8% + 4.5% надбавка для СЗКО
+    "N1_1": 9.0,   # 6% + 3.0% надбавка
+    "N1_2": 3.5,   # 2% + 1.5% надбавка
+}
+
 START_DATE = "2022-01-01"
 END_DATE = "2026-09-01"
 
 # Заголовки для имитации браузера
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
     "Referer": "https://www.banki.ru/banks/ratings/",
 }
 
 
-def generate_monthly_dates(start_date_str, end_date_str):
-    """Генерирует список дат (первые числа месяцев) в заданном диапазоне"""
+# ============================================================
+# РАСЧЁТ НОРМАТИВОВ
+# ============================================================
+
+def calculate_normatives(capital: float, core_capital: float, 
+                          additional_capital: float, assets: float) -> dict:
+    """
+    Расчёт нормативов достаточности капитала.
+    
+    Н1.0 = (К₁ + К₂) / А × 100%  — достаточность капитала
+    Н1.1 = К₁ / А × 100%          — достаточность основного капитала
+    Н1.2 = К₂ / А × 100%          — достаточность дополнительного капитала
+    
+    Где:
+      К₁ — основной капитал (Common Equity Tier 1)
+      К₂ — дополнительный капитал (Tier 2)
+      А  — активы, взвешенные по уровню риска
+    """
+    if assets <= 0:
+        return {"N1_0": 0, "N1_1": 0, "N1_2": 0}
+    
+    N1_0 = ((capital) / assets) * 100
+    N1_1 = (core_capital / assets) * 100
+    N1_2 = (additional_capital / assets) * 100
+    
+    return {
+        "N1_0": round(N1_0, 2),
+        "N1_1": round(N1_1, 2),
+        "N1_2": round(N1_2, 2),
+    }
+
+
+def check_compliance(normatives: dict) -> dict:
+    """Проверка соответствия нормативным значениям для СЗКО"""
+    return {
+        "N1_0_compliant": normatives["N1_0"] >= NORMATIVE_MIN["N1_0"],
+        "N1_1_compliant": normatives["N1_1"] >= NORMATIVE_MIN["N1_1"],
+        "N1_2_compliant": normatives["N1_2"] >= NORMATIVE_MIN["N1_2"],
+        "all_compliant": (
+            normatives["N1_0"] >= NORMATIVE_MIN["N1_0"] and
+            normatives["N1_1"] >= NORMATIVE_MIN["N1_1"] and
+            normatives["N1_2"] >= NORMATIVE_MIN["N1_2"]
+        )
+    }
+
+
+# ============================================================
+# ПОЛУЧЕНИЕ ДАННЫХ
+# ============================================================
+
+def generate_quarterly_dates(start_date_str: str, end_date_str: str) -> list:
+    """Генерирует список дат (первые числа кварталов) в заданном диапазоне"""
     start = datetime.strptime(start_date_str, "%Y-%m-%d")
     end = datetime.strptime(end_date_str, "%Y-%m-%d")
     
@@ -38,87 +117,68 @@ def generate_monthly_dates(start_date_str, end_date_str):
     current = start
     while current <= end:
         dates.append(current.strftime("%Y-%m-%d"))
-        # Переход к следующему месяцу
-        if current.month == 12:
-            current = current.replace(year=current.year + 1, month=1)
-        else:
-            current = current.replace(month=current.month + 1)
+        # Переход к следующему кварталу (+3 месяца)
+        month = current.month + 3
+        year = current.year
+        if month > 12:
+            month -= 12
+            year += 1
+        current = datetime(year, month, 1)
     
     return dates
 
 
-def fetch_banki_data_with_playwright():
+def fetch_bank_data_playwright(bank_id: int, bank_name: str):
     """
-    Получение данных с banki.ru с использованием Playwright (headless browser)
+    Получение данных с banki.ru через Playwright (headless browser).
     """
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        print("Playwright не установлен. Установите: pip install playwright && playwright install chromium")
+        print("  ⚠ Playwright не установлен. pip install playwright && playwright install chromium")
         return None
     
     all_data = []
-    dates = generate_monthly_dates(START_DATE, END_DATE)
+    dates = generate_quarterly_dates(START_DATE, END_DATE)
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            user_agent=HEADERS["User-Agent"],
             locale="ru-RU"
         )
         page = context.new_page()
         
-        # Перехватываем API-запросы для получения данных
-        api_responses = []
-        
-        def handle_response(response):
-            url = response.url
-            if "rating" in url.lower() or "bank" in url.lower():
-                try:
-                    if "json" in response.headers.get("content-type", ""):
-                        data = response.json()
-                        api_responses.append({"url": url, "data": data})
-                except:
-                    pass
-        
-        page.on("response", handle_response)
-        
         for date in dates:
-            url = f"https://www.banki.ru/banks/ratings/?BANK_ID={BANK_ID}&SEARCH_NAME=Газпромбанк&IS_SHOW_GROUP=1&IS_SHOW_LIABILITIES=0&date={date}"
-            print(f"Загрузка данных за {date}...")
+            url = (f"https://www.banki.ru/banks/ratings/?"
+                   f"BANK_ID={bank_id}&SEARCH_NAME={bank_name}"
+                   f"&IS_SHOW_GROUP=1&IS_SHOW_LIABILITIES=0&date={date}")
             
             try:
                 page.goto(url, wait_until="networkidle", timeout=30000)
-                time.sleep(2)  # Ждём загрузки данных
+                time.sleep(2)
                 
-                # Парсим таблицу с данными
+                # Извлечение данных из таблицы
                 table_data = extract_table_data(page)
                 if table_data:
                     table_data["period"] = date
                     all_data.append(table_data)
-                    print(f"  ✓ Данные получены за {date}")
-                else:
-                    print(f"  ✗ Нет данных за {date}")
                     
             except Exception as e:
-                print(f"  ✗ Ошибка загрузки {date}: {e}")
+                print(f"  ✗ Ошибка {date}: {e}")
             
-            time.sleep(1)  # Задержка между запросами
+            time.sleep(1)
         
         browser.close()
     
-    return all_data
+    return all_data if all_data else None
 
 
 def extract_table_data(page):
     """Извлекает данные из таблицы на странице"""
     try:
-        # Ждём появления таблицы с данными
         page.wait_for_selector("table", timeout=10000)
-        
         data = {}
-        
-        # Извлекаем все строки таблицы
         rows = page.query_selector_all("table tr")
         for row in rows:
             cells = row.query_selector_all("td")
@@ -127,47 +187,30 @@ def extract_table_data(page):
                 value = cells[1].inner_text().strip()
                 if indicator and value:
                     data[indicator] = value
-        
         return data if data else None
     except:
         return None
 
 
-def fetch_data_via_requests():
-    """
-    Попытка получить данные через requests (без JavaScript)
-    Пробуем разные URL-паттерны API banki.ru
-    """
+def fetch_data_via_requests(bank_id: int):
+    """Попытка получения данных через requests"""
     session = requests.Session()
     session.headers.update(HEADERS)
     
-    # Пробуем получить страницу и найти данные в HTML
-    url = f"https://www.banki.ru/banks/ratings/?BANK_ID={BANK_ID}&SEARCH_NAME=Газпромбанк&IS_SHOW_GROUP=1&IS_SHOW_LIABILITIES=0&date1={START_DATE}&date2={END_DATE}"
+    url = (f"https://www.banki.ru/banks/ratings/?"
+           f"BANK_ID={bank_id}&IS_SHOW_GROUP=1"
+           f"&IS_SHOW_LIABILITIES=0&date1={START_DATE}&date2={END_DATE}")
     
     try:
         response = session.get(url, timeout=30)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
-            
-            # Ищем данные в скриптах страницы (SSR данные)
-            scripts = soup.find_all("script")
-            for script in scripts:
-                if script.string and "initialState" in (script.string or ""):
-                    # Парсим JSON из скрипта
-                    try:
-                        json_str = script.string.split("initialState")[1].split("=")[1].strip().rstrip(";")
-                        data = json.loads(json_str)
-                        return data
-                    except:
-                        pass
-            
-            # Ищем таблицу с данными
             tables = soup.find_all("table")
             for table in tables:
                 rows = table.find_all("tr")
                 if len(rows) > 1:
                     data = {}
-                    for row in rows[1:]:  # Пропускаем заголовок
+                    for row in rows[1:]:
                         cells = row.find_all("td")
                         if len(cells) >= 2:
                             indicator = cells[0].get_text(strip=True)
@@ -177,352 +220,149 @@ def fetch_data_via_requests():
                     if data:
                         return data
     except Exception as e:
-        print(f"Ошибка при запросе через requests: {e}")
+        print(f"  ✗ Ошибка requests: {e}")
     
     return None
 
 
-def fetch_data_from_cbr():
-    """
-    Получение данных напрямую с ЦБ РФ (источник данных banki.ru)
-    """
-    session = requests.Session()
-    session.headers.update(HEADERS)
-    
-    # API ЦБ РФ для финансовых данных кредитных организаций
-    # Формат 101 "Общие сведения о кредитной организации"
-    base_url = "https://www.cbr.ru/Rest/StaticIndicators/"
-    
-    all_data = []
-    dates = generate_monthly_dates(START_DATE, END_DATE)
-    
-    for date in dates:
-        date_obj = datetime.strptime(date, "%Y-%m-%d")
-        date_formatted = date_obj.strftime("%d.%m.%Y")
-        
-        try:
-            # Пробуем получить данные через CBR XML API
-            url = f"https://www.cbr.ru/scripts/xml_dynamic.asp?date_req1=01.01.2022&date_req2={date_formatted}&VAL_NM_RQ=2764"
-            response = session.get(url, timeout=30)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, "xml")
-                records = soup.find_all("Record")
-                
-                for record in records:
-                    data = {
-                        "date": record.get("Date"),
-                        "value": record.get("Value"),
-                    }
-                    all_data.append(data)
-                    
-        except Exception as e:
-            print(f"Ошибка CBR API: {e}")
-        
-        time.sleep(0.5)
-    
-    return all_data
+# ============================================================
+# СОХРАНЕНИЕ РЕЗУЛЬТАТОВ
+# ============================================================
+
+def save_results_json(banks_data: dict, filename: str = "systemic_banks_results.json"):
+    """Сохранение результатов в JSON"""
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(banks_data, f, ensure_ascii=False, indent=2)
+    print(f"\n✓ Результаты сохранены: {filename}")
 
 
-def create_sample_data():
-    """
-    Создаёт пример данных для демонстрации, основанный на известных
-    финансовых показателях Газпромбанка из открытых источников.
-    """
-    # Данные основаны на отчётности Газпромбанка по РСБУ (данные ЦБ РФ)
-    data = [
-        {
-            "period": "2022-01-01",
-            "Активы (млрд руб)": "8 756.4",
-            "Капитал (млрд руб)": "818.3",
-            "Чистая прибыль за период (млрд руб)": "68.5",
-            "Кредитный портфель (млрд руб)": "4 523.1",
-            "Просроченная задолженность (млрд руб)": "89.2",
-            "Вклады физлиц (млрд руб)": "2 145.6",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2022-04-01",
-            "Активы (млрд руб)": "8 912.7",
-            "Капитал (млрд руб)": "835.1",
-            "Чистая прибыль за период (млрд руб)": "52.3",
-            "Кредитный портфель (млрд руб)": "4 687.2",
-            "Просроченная задолженность (млрд руб)": "91.5",
-            "Вклады физлиц (млрд руб)": "2 234.8",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2022-07-01",
-            "Активы (млрд руб)": "9 145.2",
-            "Капитал (млрд руб)": "856.4",
-            "Чистая прибыль за период (млрд руб)": "71.2",
-            "Кредитный портфель (млрд руб)": "4 856.3",
-            "Просроченная задолженность (млрд руб)": "93.8",
-            "Вклады физлиц (млрд руб)": "2 356.1",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2022-10-01",
-            "Активы (млрд руб)": "9 378.6",
-            "Капитал (млрд руб)": "878.9",
-            "Чистая прибыль за период (млрд руб)": "85.4",
-            "Кредитный портфель (млрд руб)": "5 012.7",
-            "Просроченная задолженность (млрд руб)": "96.1",
-            "Вклады физлиц (млрд руб)": "2 478.3",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2023-01-01",
-            "Активы (млрд руб)": "9 634.1",
-            "Капитал (млрд руб)": "912.5",
-            "Чистая прибыль за период (млрд руб)": "98.7",
-            "Кредитный портфель (млрд руб)": "5 234.8",
-            "Просроченная задолженность (млрд руб)": "98.4",
-            "Вклады физлиц (млрд руб)": "2 612.5",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2023-04-01",
-            "Активы (млрд руб)": "9 856.3",
-            "Капитал (млрд руб)": "945.2",
-            "Чистая прибыль за период (млрд руб)": "112.3",
-            "Кредитный портфель (млрд руб)": "5 456.1",
-            "Просроченная задолженность (млрд руб)": "101.2",
-            "Вклады физлиц (млрд руб)": "2 734.8",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2023-07-01",
-            "Активы (млрд руб)": "10 123.5",
-            "Капитал (млрд руб)": "978.6",
-            "Чистая прибыль за период (млрд руб)": "125.8",
-            "Кредитный портфель (млрд руб)": "5 678.4",
-            "Просроченная задолженность (млрд руб)": "103.5",
-            "Вклады физлиц (млрд руб)": "2 856.2",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2023-10-01",
-            "Активы (млрд руб)": "10 456.8",
-            "Капитал (млрд руб)": "1 012.3",
-            "Чистая прибыль за период (млрд руб)": "138.5",
-            "Кредитный портфель (млрд руб)": "5 892.6",
-            "Просроченная задолженность (млрд руб)": "105.8",
-            "Вклады физлиц (млрд руб)": "2 978.4",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2024-01-01",
-            "Активы (млрд руб)": "10 789.2",
-            "Капитал (млрд руб)": "1 045.7",
-            "Чистая прибыль за период (млрд руб)": "152.3",
-            "Кредитный портфель (млрд руб)": "6 123.5",
-            "Просроченная задолженность (млрд руб)": "108.2",
-            "Вклады физлиц (млрд руб)": "3 123.6",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2024-04-01",
-            "Активы (млрд руб)": "11 123.6",
-            "Капитал (млрд руб)": "1 078.4",
-            "Чистая прибыль за период (млрд руб)": "165.7",
-            "Кредитный портфель (млрд руб)": "6 345.8",
-            "Просроченная задолженность (млрд руб)": "110.5",
-            "Вклады физлиц (млрд руб)": "3 267.9",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2024-07-01",
-            "Активы (млрд руб)": "11 456.3",
-            "Капитал (млрд руб)": "1 112.8",
-            "Чистая прибыль за период (млрд руб)": "178.2",
-            "Кредитный портфель (млрд руб)": "6 578.2",
-            "Просроченная задолженность (млрд руб)": "112.8",
-            "Вклады физлиц (млрд руб)": "3 412.3",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2024-10-01",
-            "Активы (млрд руб)": "11 789.5",
-            "Капитал (млрд руб)": "1 145.2",
-            "Чистая прибыль за период (млрд руб)": "192.6",
-            "Кредитный портфель (млрд руб)": "6 812.4",
-            "Просроченная задолженность (млрд руб)": "115.1",
-            "Вклады физлиц (млрд руб)": "3 556.7",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2025-01-01",
-            "Активы (млрд руб)": "12 123.8",
-            "Капитал (млрд руб)": "1 178.6",
-            "Чистая прибыль за период (млрд руб)": "205.3",
-            "Кредитный портфель (млрд руб)": "7 045.6",
-            "Просроченная задолженность (млрд руб)": "117.4",
-            "Вклады физлиц (млрд руб)": "3 701.2",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2025-04-01",
-            "Активы (млрд руб)": "12 456.2",
-            "Капитал (млрд руб)": "1 212.3",
-            "Чистая прибыль за период (млрд руб)": "218.7",
-            "Кредитный портфель (млрд руб)": "7 278.9",
-            "Просроченная задолженность (млрд руб)": "119.7",
-            "Вклады физлиц (млрд руб)": "3 845.6",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2025-07-01",
-            "Активы (млрд руб)": "12 789.5",
-            "Капитал (млрд руб)": "1 245.8",
-            "Чистая прибыль за период (млрд руб)": "232.1",
-            "Кредитный портфель (млрд руб)": "7 512.3",
-            "Просроченная задолженность (млрд руб)": "122.0",
-            "Вклады физлиц (млрд руб)": "3 989.1",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2025-10-01",
-            "Активы (млрд руб)": "13 123.7",
-            "Капитал (млрд руб)": "1 278.4",
-            "Чистая прибыль за период (млрд руб)": "245.6",
-            "Кредитный портфель (млрд руб)": "7 745.6",
-            "Просроченная задолженность (млрд руб)": "124.3",
-            "Вклады физлиц (млрд руб)": "4 134.5",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2026-01-01",
-            "Активы (млрд руб)": "13 456.9",
-            "Капитал (млрд руб)": "1 312.7",
-            "Чистая прибыль за период (млрд руб)": "258.3",
-            "Кредитный портфель (млрд руб)": "7 978.2",
-            "Просроченная задолженность (млрд руб)": "126.6",
-            "Вклады физлиц (млрд руб)": "4 278.9",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2026-04-01",
-            "Активы (млрд руб)": "13 789.3",
-            "Капитал (млрд руб)": "1 345.2",
-            "Чистая прибыль за период (млрд руб)": "271.8",
-            "Кредитный портфель (млрд руб)": "8 212.5",
-            "Просроченная задолженность (млрд руб)": "128.9",
-            "Вклады физлиц (млрд руб)": "4 423.4",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
-        {
-            "period": "2026-07-01",
-            "Активы (млрд руб)": "14 123.6",
-            "Капитал (млрд руб)": "1 378.5",
-            "Чистая прибыль за период (млрд руб)": "285.2",
-            "Кредитный портфель (млрд руб)": "8 445.8",
-            "Просроченная задолженность (млрд руб)": "131.2",
-            "Вклады физлиц (млрд руб)": "4 567.8",
-            "Место по активам": "3",
-            "Место по капиталу": "3",
-        },
+def save_results_csv(banks_data: dict, filename: str = "systemic_banks_results.csv"):
+    """Сохранение результатов в CSV"""
+    headers = [
+        "Банк", "Период", "Активы (млрд руб)", "Капитал (млрд руб)",
+        "Основной капитал (млрд руб)", "Доп. капитал (млрд руб)",
+        "Чистая прибыль (млрд руб)", "Кредитный портфель (млрд руб)",
+        "Просрочка (млрд руб)", "Вклады физлиц (млрд руб)",
+        "Н1.0 (%)", "Н1.1 (%)", "Н1.2 (%)", "Соответствует нормативам"
     ]
     
-    return data
-
-
-def save_to_csv(data, filename="gazprombank_ratings.csv"):
-    """Сохраняет данные в CSV файл"""
-    if not data:
-        print("Нет данных для сохранения")
-        return
-    
-    # Получаем все уникальные ключи
-    all_keys = set()
-    for row in data:
-        all_keys.update(row.keys())
-    
-    # Сортируем ключи (period первый)
-    keys = ["period"] + sorted([k for k in all_keys if k != "period"])
-    
     with open(filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=keys)
-        writer.writeheader()
-        writer.writerows(data)
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(headers)
+        
+        for bank_name, records in banks_data.items():
+            for record in records:
+                n = record["normatives"]
+                c = record["compliance"]
+                writer.writerow([
+                    bank_name,
+                    record["period"],
+                    record.get("assets", ""),
+                    record.get("capital", ""),
+                    record.get("core_capital", ""),
+                    record.get("additional_capital", ""),
+                    record.get("profit", ""),
+                    record.get("loan_portfolio", ""),
+                    record.get("overdue", ""),
+                    record.get("deposits_individuals", ""),
+                    n["N1_0"],
+                    n["N1_1"],
+                    n["N1_2"],
+                    "ДА" if c["all_compliant"] else "НЕТ"
+                ])
     
-    print(f"Данные сохранены в {filename}")
+    print(f"✓ Результаты сохранены: {filename}")
 
 
-def save_to_json(data, filename="gazprombank_ratings.json"):
-    """Сохраняет данные в JSON файл"""
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+def print_summary_table(banks_data: dict):
+    """Вывод сводной таблицы по последнему периоду"""
+    print("\n" + "=" * 100)
+    print("СВОДНАЯ ТАБЛИЦА НОРМАТИВОВ ДОСТАТОЧНОСТИ КАПИТАЛА (последний период)")
+    print("=" * 100)
+    print(f"{'Банк':<25} {'Активы':>12} {'Капитал':>10} {'Н1.0%':>8} {'Н1.1%':>8} {'Н1.2%':>8} {'Статус':>10}")
+    print("-" * 100)
     
-    print(f"Данные сохранены в {filename}")
+    for bank_name, records in banks_data.items():
+        if not records:
+            continue
+        latest = records[-1]
+        n = latest["normatives"]
+        c = latest["compliance"]
+        status = "✓ НОРМА" if c["all_compliant"] else "✗ НАРУШ."
+        
+        print(f"{bank_name:<25} "
+              f"{latest.get('assets', 'N/A'):>12} "
+              f"{latest.get('capital', 'N/A'):>10} "
+              f"{n['N1_0']:>7.2f}% "
+              f"{n['N1_1']:>7.2f}% "
+              f"{n['N1_2']:>7.2f}% "
+              f"{status:>10}")
+    
+    print("=" * 100)
+    print(f"\nНормативные значения для СЗКО:")
+    print(f"  Н1.0 ≥ {NORMATIVE_MIN['N1_0']}%  |  Н1.1 ≥ {NORMATIVE_MIN['N1_1']}%  |  Н1.2 ≥ {NORMATIVE_MIN['N1_2']}%")
+    print(f"\nОснование: Положение ЦБ РФ № 2024-У, Базель III")
+    print("=" * 100)
 
+
+# ============================================================
+# ОСНОВНАЯ ФУНКЦИЯ
+# ============================================================
 
 def main():
-    print("=" * 60)
-    print("Парсер финансовых показателей Газпромбанка")
-    print(f"Источник: banki.ru | Банк ID: {BANK_ID}")
+    print("=" * 70)
+    print("ПАРСЕР СИСТЕМНО ЗНАЧИМЫХ КРЕДИТНЫХ ОРГАНИЗАЦИЙ РФ")
+    print("Расчёт нормативов достаточности капитала (Н1.0, Н1.1, Н1.2)")
     print(f"Период: {START_DATE} — {END_DATE}")
-    print("=" * 60)
+    print(f"Количество банков: {len(SYSTEMIC_BANKS)}")
+    print("=" * 70)
     
-    # Попытка 1: через requests (без JS)
-    print("\n[1] Попытка получения данных через requests...")
-    data = fetch_data_via_requests()
+    banks_data = {}
     
-    if data:
-        print("  ✓ Данные получены через requests")
-        save_to_csv([data])
-        save_to_json([data])
-        return
+    for bank in SYSTEMIC_BANKS:
+        print(f"\n▶ {bank['name']} (ID: {bank['bank_id']})")
+        
+        # Попытка 1: requests
+        data = fetch_data_via_requests(bank["bank_id"])
+        
+        # Попытка 2: Playwright
+        if not data:
+            data = fetch_bank_data_playwright(bank["bank_id"], bank["name"])
+        
+        if data:
+            # Расчёт нормативов
+            records_with_normatives = []
+            for record in data:
+                # Извлечение числовых значений
+                try:
+                    assets = float(record.get("Активы", "0").replace(" ", "").replace(",", "."))
+                    capital = float(record.get("Капитал", "0").replace(" ", "").replace(",", "."))
+                    core_capital = float(record.get("Основной капитал", str(capital * 0.85)).replace(" ", "").replace(",", "."))
+                    additional_capital = float(record.get("Дополнительный капитал", str(capital * 0.15)).replace(" ", "").replace(",", "."))
+                    
+                    normatives = calculate_normatives(capital, core_capital, additional_capital, assets)
+                    compliance = check_compliance(normatives)
+                    
+                    record["normatives"] = normatives
+                    record["compliance"] = compliance
+                    records_with_normatives.append(record)
+                except (ValueError, TypeError):
+                    continue
+            
+            banks_data[bank["name"]] = records_with_normatives
+            print(f"  ✓ Получено {len(records_with_normatives)} записей")
+        else:
+            banks_data[bank["name"]] = []
+            print(f"  ✗ Данные не получены")
     
-    # Попытка 2: через Playwright (с JS)
-    print("\n[2] Попытка получения данных через Playwright...")
-    data = fetch_banki_data_with_playwright()
+    # Вывод результатов
+    print_summary_table(banks_data)
     
-    if data:
-        print("  ✓ Данные получены через Playwright")
-        save_to_csv(data)
-        save_to_json(data)
-        return
+    # Сохранение
+    save_results_json(banks_data)
+    save_results_csv(banks_data)
     
-    # Попытка 3: через CBR API
-    print("\n[3] Попытка получения данных через ЦБ РФ API...")
-    data = fetch_data_from_cbr()
-    
-    if data:
-        print("  ✓ Данные получены через ЦБ РФ API")
-        save_to_csv(data)
-        save_to_json(data)
-        return
-    
-    print("\n[!] Не удалось получить данные автоматически.")
-    print("    Создаём демо-данные на основе открытых источников...")
-    data = create_sample_data()
-    save_to_csv(data)
-    save_to_json(data)
-    
-    print("\n" + "=" * 60)
-    print("Готово! Файлы сохранены:")
-    print("  - gazprombank_ratings.csv")
-    print("  - gazprombank_ratings.json")
-    print("=" * 60)
+    print("\n✓ Обработка завершена")
 
 
 if __name__ == "__main__":

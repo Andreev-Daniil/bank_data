@@ -1,10 +1,13 @@
 :root {
   --primary: #1a56db;
   --primary-light: #e1effe;
+  --primary-dark: #1e3a8a;
   --secondary: #6b7280;
   --success: #059669;
+  --success-light: #d1fae5;
   --warning: #d97706;
   --danger: #dc2626;
+  --danger-light: #fee2e2;
   --bg: #f8fafc;
   --card-bg: #ffffff;
   --text: #1e293b;
@@ -110,17 +113,179 @@ body {
   flex: 1;
 }
 
-/* Summary Cards */
-.summary-section {
+section {
   margin-bottom: 32px;
 }
 
-.summary-section h2 {
+section h2 {
   font-size: 18px;
   margin-bottom: 16px;
   color: var(--text);
 }
 
+/* Bank Selector */
+.bank-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bank-tab {
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  color: var(--text);
+}
+
+.bank-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.bank-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+/* Bank Info */
+.bank-info-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+}
+
+.bank-info-card h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.bank-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.szk-badge {
+  background: var(--success-light);
+  color: var(--success);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Normatives */
+.normatives-info {
+  margin-bottom: 16px;
+}
+
+.normatives-description {
+  font-size: 14px;
+  color: var(--text-light);
+  padding: 12px 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+}
+
+.normatives-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.normative-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border-top: 4px solid;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.normative-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.normative-card.compliant {
+  border-top-color: var(--success);
+}
+
+.normative-card.non-compliant {
+  border-top-color: var(--danger);
+}
+
+.normative-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.normative-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.normative-type {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.normative-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.compliant .normative-value {
+  color: var(--success);
+}
+
+.non-compliant .normative-value {
+  color: var(--danger);
+}
+
+.normative-min {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+.status-ok {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.status-fail {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.normative-formula {
+  font-size: 12px;
+  color: var(--text-light);
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  line-height: 1.8;
+}
+
+/* Summary Cards */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -171,7 +336,6 @@ body {
   background: var(--card-bg);
   border-radius: var(--radius);
   padding: 24px;
-  margin-bottom: 32px;
   box-shadow: var(--shadow);
 }
 
@@ -186,6 +350,7 @@ body {
 
 .chart-header h2 {
   font-size: 18px;
+  margin-bottom: 0;
 }
 
 .metric-select {
@@ -196,7 +361,7 @@ body {
   background: white;
   color: var(--text);
   cursor: pointer;
-  min-width: 250px;
+  min-width: 280px;
 }
 
 .metric-select:focus {
@@ -235,11 +400,14 @@ body {
   border-radius: 6px 6px 0 0;
   margin-top: auto;
   transition: height 0.5s ease;
-  position: relative;
+}
+
+.chart-bar.bar-normative {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
 }
 
 .chart-bar:hover {
-  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+  opacity: 0.85;
 }
 
 .chart-tooltip {
@@ -257,12 +425,11 @@ body {
   white-space: nowrap;
 }
 
-/* Table Section */
-.table-section {
+/* Tables */
+.table-section, .comparison-section {
   background: var(--card-bg);
   border-radius: var(--radius);
   padding: 24px;
-  margin-bottom: 32px;
   box-shadow: var(--shadow);
 }
 
@@ -277,6 +444,7 @@ body {
 
 .table-header h2 {
   font-size: 18px;
+  margin-bottom: 0;
 }
 
 .btn-export {
@@ -309,7 +477,7 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 1000px;
+  min-width: 800px;
 }
 
 .data-table th {
@@ -356,10 +524,41 @@ body {
   white-space: nowrap;
 }
 
-.rank-cell {
-  text-align: center;
+.bank-name-cell {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.value-ok {
+  color: var(--success);
   font-weight: 600;
-  color: var(--primary);
+}
+
+.value-fail {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.status-cell {
+  text-align: center;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-ok-badge {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-fail-badge {
+  background: var(--danger-light);
+  color: var(--danger);
 }
 
 /* Info Section */
@@ -367,7 +566,6 @@ body {
   background: var(--card-bg);
   border-radius: var(--radius);
   padding: 24px;
-  margin-bottom: 32px;
   box-shadow: var(--shadow);
 }
 
@@ -376,10 +574,25 @@ body {
   margin-bottom: 16px;
 }
 
+.info-section h3 {
+  font-size: 15px;
+  margin: 16px 0 8px;
+  color: var(--text);
+}
+
 .info-content p {
   margin-bottom: 8px;
   font-size: 14px;
   color: var(--text);
+}
+
+.info-content ul {
+  margin: 8px 0 16px 20px;
+  font-size: 14px;
+}
+
+.info-content li {
+  margin-bottom: 4px;
 }
 
 .info-content a {
@@ -389,6 +602,20 @@ body {
 
 .info-content a:hover {
   text-decoration: underline;
+}
+
+.formula-block {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.formula-block p {
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
 }
 
 .note {
@@ -463,6 +690,10 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
   
+  .normatives-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .chart-header {
     flex-direction: column;
     align-items: flex-start;
@@ -476,6 +707,16 @@ body {
   .table-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .bank-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+  }
+
+  .bank-tab {
+    flex-shrink: 0;
   }
 }
 
