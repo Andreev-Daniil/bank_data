@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './index.css'
 import banksData from '../public/data/systemic_banks.json'
+import depositRatesData from '../public/data/deposit_rates.json'
 
 interface BankRecord {
   period: string
@@ -39,8 +40,37 @@ interface BankDataFile {
   banks: Bank[]
 }
 
+interface DepositRates {
+  overnight: number
+  '7_days': number
+  '1_month': number
+  '3_months': number
+  '6_months': number
+  '1_year': number
+  '2_years': number
+  '3_years': number
+}
+
+interface BankDepositRate {
+  bank_id: number
+  bank_name: string
+  rates: DepositRates
+}
+
+interface DepositRatesFile {
+  metadata: {
+    title: string
+    source: string
+    date: string
+    currency: string
+    description: string
+  }
+  rates: BankDepositRate[]
+}
+
 function App() {
   const data = banksData as BankDataFile
+  const depositRates = depositRatesData as DepositRatesFile
   const [selectedBank, setSelectedBank] = useState<number>(0)
   const [selectedMetric, setSelectedMetric] = useState<string>('capital')
   const [sortField, setSortField] = useState<string>('period')
@@ -459,6 +489,53 @@ function App() {
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        {/* Deposit Rates Section */}
+        <section className="deposit-rates-section">
+          <div className="section-header">
+            <h2>Ставки по депозитам для юридических лиц</h2>
+            <p className="section-subtitle">Актуальные ставки на {depositRates.metadata.date}</p>
+          </div>
+          <div className="table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Банк</th>
+                  <th>Overnight</th>
+                  <th>7 дней</th>
+                  <th>1 месяц</th>
+                  <th>3 месяца</th>
+                  <th>6 месяцев</th>
+                  <th>1 год</th>
+                  <th>2 года</th>
+                  <th>3 года</th>
+                </tr>
+              </thead>
+              <tbody>
+                {depositRates.rates.map((bankRate) => (
+                  <tr key={bankRate.bank_id}>
+                    <td className="bank-name-cell">{bankRate.bank_name}</td>
+                    <td className="number-cell rate-cell">{bankRate.rates.overnight}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['7_days']}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['1_month']}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['3_months']}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['6_months']}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['1_year']}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['2_years']}%</td>
+                    <td className="number-cell rate-cell">{bankRate.rates['3_years']}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="rates-info">
+            <p className="note">
+              💡 <strong>Примечание:</strong> Указаны ориентировочные ставки по депозитам для юридических лиц в рублях РФ. 
+              Фактические ставки могут отличаться в зависимости от суммы депозита, условий размещения и статуса клиента. 
+              Для получения точной информации обратитесь в соответствующий банк.
+            </p>
           </div>
         </section>
 

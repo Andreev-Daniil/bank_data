@@ -628,6 +628,34 @@ section h2 {
   color: #92400e;
 }
 
+/* Deposit Rates Section */
+.deposit-rates-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-subtitle {
+  color: var(--text-light);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.rate-cell {
+  font-weight: 600;
+  color: var(--success);
+}
+
+.rates-info {
+  margin-top: 16px;
+}
+
 /* Footer */
 .footer {
   background: #1e293b;
