@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './index.css'
+import banksData from '../public/data/systemic_banks.json'
 
 interface BankRecord {
   period: string
@@ -39,29 +40,11 @@ interface BankDataFile {
 }
 
 function App() {
-  const [data, setData] = useState<BankDataFile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const data = banksData as BankDataFile
   const [selectedBank, setSelectedBank] = useState<number>(0)
   const [selectedMetric, setSelectedMetric] = useState<string>('capital')
   const [sortField, setSortField] = useState<string>('period')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-
-  useEffect(() => {
-    fetch('/data/systemic_banks.json')
-      .then(res => {
-        if (!res.ok) throw new Error('Не удалось загрузить данные')
-        return res.json()
-      })
-      .then(json => {
-        setData(json)
-        setLoading(false)
-      })
-      .catch(err => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [])
 
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr)
@@ -163,24 +146,6 @@ function App() {
     link.download = `${bank.name}_financials.csv`
     link.click()
     URL.revokeObjectURL(url)
-  }
-
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        <p>Загрузка данных...</p>
-      </div>
-    )
-  }
-
-  if (error || !data) {
-    return (
-      <div className="error">
-        <h2>Ошибка</h2>
-        <p>{error || 'Данные не загружены'}</p>
-      </div>
-    )
   }
 
   const currentBank = data.banks[selectedBank]
