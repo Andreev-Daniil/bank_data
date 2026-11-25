@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Системно значимые банки РФ — Демо</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1a56db 50%, #2563eb 100%);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: #1e293b;
+        }
+
+        .bank-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .bank-tab {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #1e293b;
+        }
+
+        .bank-tab:hover {
+            border-color: #1a56db;
+            background: #e1effe;
+        }
+
+        .bank-tab.active {
+            background: #1a56db;
+            color: white;
+            border-color: #1a56db;
+            font-weight: 600;
+        }
+
+        .bank-info {
+            background: #f8fafc;
+            border-left: 4px solid #1a56db;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .bank-info h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .bank-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .normatives-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .normative-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-top: 4px solid;
+        }
+
+        .normative-card.compliant {
+            border-top-color: #059669;
+        }
+
+        .normative-card.non-compliant {
+            border-top-color: #dc2626;
+        }
+
+        .normative-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .normative-name {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .normative-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .compliant .normative-value {
+            color: #059669;
+        }
+
+        .non-compliant .normative-value {
+            color: #dc2626;
+        }
+
+        .normative-min {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .status-ok {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .status-fail {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f1f5f9;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .number-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .value-ok {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .value-fail {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .rate-cell {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .bank-selector {
+            margin-bottom: 20px;
+        }
+
+        .bank-selector-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .selector-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            color: #1e293b;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .selector-btn:hover {
+            border-color: #1a56db;
+            background: #e1effe;
+        }
+
+        .selector-btn.active {
+            background: #1a56db;
+            color: white;
+            border-color: #1a56db;
+        }
+
+        .note {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #92400e;
+            margin-top: 16px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Системно значимые банки РФ</h1>
+            <p>Финансовые показатели и нормативы достаточности капитала | 2022–2026</p>
+        </div>
+
+        <div class="section">
+            <h2>Выбор банка</h2>
+            <div class="bank-tabs" id="bankTabs"></div>
+        </div>
+
+        <div class="section">
+            <div class="bank-info" id="bankInfo"></div>
+            
+            <h2>Нормативы достаточности капитала</h2>
+            <div class="normatives-grid" id="normativesGrid"></div>
+        </div>
+
+        <div class="section">
+            <h2>Таблица показателей</h2>
+            <div class="table-wrapper">
+                <table id="metricsTable">
+                    <thead>
+                        <tr>
+                            <th>Период</th>
+                            <th>Активы, млрд ₽</th>
+                            <th>Капитал, млрд ₽</th>
+                            <th>Н1.0, %</th>
+                            <th>Н1.1, %</th>
+                            <th>Н1.2, %</th>
+                            <th>Прибыль, млрд ₽</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metricsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💰 Ставки по депозитам для юридических лиц</h2>
+            <p style="color: #64748b; margin-bottom: 16px;">Актуальные ставки на 01.09.2026</p>
+            
+            <div class="bank-selector">
+                <div class="bank-selector-buttons" id="rateBankSelector"></div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="ratesTable">
+                    <thead>
+                        <tr>
+                            <th>Банк</th>
+                            <th>Overnight</th>
+                            <th>7 дней</th>
+                            <th>1 месяц</th>
+                            <th>3 месяца</th>
+                            <th>6 месяцев</th>
+                            <th>1 год</th>
+                            <th>2 года</th>
+                            <th>3 года</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ratesTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="note">
+                💡 <strong>Примечание:</strong> Указаны ориентировочные ставки по депозитам для юридических лиц в рублях РФ. 
+                Фактические ставки могут отличаться в зависимости от суммы депозита, условий размещения и статуса клиента.
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Источник данных: banki.ru / ЦБ РФ | Нормативы: Базель III / Положение ЦБ РФ № 2024-У</p>
+        </div>
+    </div>
+
+    <script>
+        // Данные банков
+        const banks = [
+            {
+                bank_id: 2590,
+                name: "Сбербанк",
+                full_name: "ПАО Сбербанк",
+                license: "1481",
+                data: [
+                    {period: "2022-01-01", assets: 36540.2, capital: 5120.5, core_capital: 4350.2, additional_capital: 770.3, profit: 112.5},
+                    {period: "2022-04-01", assets: 37120.8, capital: 5185.3, core_capital: 4410.5, additional_capital: 774.8, profit: 98.2},
+                    {period: "2022-07-01", assets: 37890.5, capital: 5260.8, core_capital: 4480.2, additional_capital: 780.6, profit: 125.8},
+                    {period: "2022-10-01", assets: 38650.2, capital: 5340.1, core_capital: 4550.8, additional_capital: 789.3, profit: 142.3},
+                    {period: "2023-01-01", assets: 39420.8, capital: 5480.5, core_capital: 4670.3, additional_capital: 810.2, profit: 165.2},
+                    {period: "2023-04-01", assets: 40180.3, capital: 5590.2, core_capital: 4760.5, additional_capital: 829.7, profit: 178.5},
+                    {period: "2023-07-01", assets: 40950.8, capital: 5710.5, core_capital: 4860.3, additional_capital: 850.2, profit: 195.8},
+                    {period: "2023-10-01", assets: 41720.5, capital: 5830.2, core_capital: 4960.8, additional_capital: 869.4, profit: 212.3},
+                    {period: "2024-01-01", assets: 42500.3, capital: 5960.8, core_capital: 5070.5, additional_capital: 890.3, profit: 228.5},
+                    {period: "2024-04-01", assets: 43280.8, capital: 6090.5, core_capital: 5180.2, additional_capital: 910.3, profit: 245.2},
+                    {period: "2024-07-01", assets: 44050.5, capital: 6220.3, core_capital: 5290.8, additional_capital: 929.5, profit: 262.8},
+                    {period: "2024-10-01", assets: 44820.2, capital: 6350.8, core_capital: 5400.5, additional_capital: 950.3, profit: 278.5},
+                    {period: "2025-01-01", assets: 45600.8, capital: 6490.5, core_capital: 5520.3, additional_capital: 970.2, profit: 295.2},
+                    {period: "2025-04-01", assets: 46380.3, capital: 6620.2, core_capital: 5630.8, additional_capital: 989.4, profit: 312.8},
+                    {period: "2025-07-01", assets: 47150.8, capital: 6750.5, core_capital: 5740.5, additional_capital: 1010.0, profit: 328.5},
+                    {period: "2025-10-01", assets: 47920.5, capital: 6880.3, core_capital: 5850.2, additional_capital: 1030.1, profit: 345.2},
+                    {period: "2026-01-01", assets: 48700.2, capital: 7020.8, core_capital: 5970.5, additional_capital: 1050.3, profit: 362.8},
+                    {period: "2026-04-01", assets: 49480.8, capital: 7150.5, core_capital: 6080.3, additional_capital: 1070.2, profit: 378.5},
+                    {period: "2026-07-01", assets: 50250.3, capital: 7290.2, core_capital: 6200.8, additional_capital: 1089.4, profit: 395.2}
+                ]
+            },
+            {
+                bank_id: 1000,
+                name: "ВТБ",
+                full_name: "Банк ВТБ (ПАО)",
+                license: "1000",
+                data: [
+                    {period: "2022-01-01", assets: 16850.3, capital: 1820.5, core_capital: 1540.2, additional_capital: 280.3, profit: 45.2},
+                    {period: "2022-04-01", assets: 17120.8, capital: 1845.3, core_capital: 1565.5, additional_capital: 279.8, profit: 38.5},
+                    {period: "2022-07-01", assets: 17450.5, capital: 1878.2, core_capital: 1595.8, additional_capital: 282.4, profit: 52.3},
+                    {period: "2022-10-01", assets: 17780.2, capital: 1912.5, core_capital: 1625.3, additional_capital: 287.2, profit: 62.8},
+                    {period: "2023-01-01", assets: 18120.8, capital: 1958.3, core_capital: 1665.5, additional_capital: 292.8, profit: 72.5},
+                    {period: "2023-04-01", assets: 18450.5, capital: 1995.2, core_capital: 1698.3, additional_capital: 296.9, profit: 78.3},
+                    {period: "2023-07-01", assets: 18780.3, capital: 2038.5, core_capital: 1735.2, additional_capital: 303.3, profit: 85.2},
+                    {period: "2023-10-01", assets: 19120.8, capital: 2082.3, core_capital: 1772.5, additional_capital: 309.8, profit: 92.8},
+                    {period: "2024-01-01", assets: 19450.5, capital: 2128.2, core_capital: 1812.3, additional_capital: 315.9, profit: 98.5},
+                    {period: "2024-04-01", assets: 19780.3, capital: 2175.5, core_capital: 1852.8, additional_capital: 322.7, profit: 105.3},
+                    {period: "2024-07-01", assets: 20120.8, capital: 2225.3, core_capital: 1895.2, additional_capital: 330.1, profit: 112.8},
+                    {period: "2024-10-01", assets: 20450.5, capital: 2278.2, core_capital: 1940.5, additional_capital: 337.7, profit: 118.5},
+                    {period: "2025-01-01", assets: 20780.3, capital: 2335.5, core_capital: 1988.3, additional_capital: 347.2, profit: 125.2},
+                    {period: "2025-04-01", assets: 21120.8, capital: 2392.3, core_capital: 2036.5, additional_capital: 355.8, profit: 132.8},
+                    {period: "2025-07-01", assets: 21450.5, capital: 2452.8, core_capital: 2088.2, additional_capital: 364.6, profit: 138.5},
+                    {period: "2025-10-01", assets: 21780.3, capital: 2515.2, core_capital: 2142.3, additional_capital: 372.9, profit: 145.3},
+                    {period: "2026-01-01", assets: 22120.8, capital: 2578.5, core_capital: 2196.5, additional_capital: 382.0, profit: 152.8},
+                    {period: "2026-04-01", assets: 22450.5, capital: 2645.3, core_capital: 2253.2, additional_capital: 392.1, profit: 158.5},
+                    {period: "2026-07-01", assets: 22780.3, capital: 2712.8, core_capital: 2310.5, additional_capital: 402.3, profit: 165.2}
+                ]
+            },
+            {
+                bank_id: 2764,
+                name: "Газпромбанк",
+                full_name: "АО «Газпромбанк»",
+                license: "354",
+                data: [
+                    {period: "2022-01-01", assets: 8756.4, capital: 818.3, core_capital: 695.2, additional_capital: 123.1, profit: 68.5},
+                    {period: "2022-04-01", assets: 8912.7, capital: 835.1, core_capital: 710.5, additional_capital: 124.6, profit: 52.3},
+                    {period: "2022-07-01", assets: 9145.2, capital: 856.4, core_capital: 728.2, additional_capital: 128.2, profit: 71.2},
+                    {period: "2022-10-01", assets: 9378.6, capital: 878.9, core_capital: 747.5, additional_capital: 131.4, profit: 85.4},
+                    {period: "2023-01-01", assets: 9634.1, capital: 912.5, core_capital: 775.8, additional_capital: 136.7, profit: 98.7},
+                    {period: "2023-04-01", assets: 9856.3, capital: 945.2, core_capital: 803.5, additional_capital: 141.7, profit: 112.3},
+                    {period: "2023-07-01", assets: 10123.5, capital: 978.6, core_capital: 832.2, additional_capital: 146.4, profit: 125.8},
+                    {period: "2023-10-01", assets: 10456.8, capital: 1012.3, core_capital: 861.5, additional_capital: 150.8, profit: 138.5},
+                    {period: "2024-01-01", assets: 10789.2, capital: 1045.7, core_capital: 890.2, additional_capital: 155.5, profit: 152.3},
+                    {period: "2024-04-01", assets: 11123.6, capital: 1078.4, core_capital: 917.5, additional_capital: 160.9, profit: 165.7},
+                    {period: "2024-07-01", assets: 11456.3, capital: 1112.8, core_capital: 946.2, additional_capital: 166.6, profit: 178.2},
+                    {period: "2024-10-01", assets: 11789.5, capital: 1145.2, core_capital: 974.5, additional_capital: 170.7, profit: 192.6},
+                    {period: "2025-01-01", assets: 12123.8, capital: 1178.6, core_capital: 1003.2, additional_capital: 175.4, profit: 205.3},
+                    {period: "2025-04-01", assets: 12456.2, capital: 1212.3, core_capital: 1032.5, additional_capital: 179.8, profit: 218.7},
+                    {period: "2025-07-01", assets: 12789.5, capital: 1245.8, core_capital: 1061.2, additional_capital: 184.6, profit: 232.1},
+                    {period: "2025-10-01", assets: 13123.7, capital: 1278.4, core_capital: 1089.5, additional_capital: 188.9, profit: 245.6},
+                    {period: "2026-01-01", assets: 13456.9, capital: 1312.7, core_capital: 1118.2, additional_capital: 194.5, profit: 258.3},
+                    {period: "2026-04-01", assets: 13789.3, capital: 1345.2, core_capital: 1146.5, additional_capital: 198.7, profit: 271.8},
+                    {period: "2026-07-01", assets: 14123.6, capital: 1378.5, core_capital: 1175.2, additional_capital: 203.3, profit: 285.2}
+                ]
+            }
+        ];
+
+        // Данные по ставкам
+        const depositRates = [
+            {bank_id: 2590, bank_name: "Сбербанк", rates: {overnight: 15.5, "7_days": 16.0, "1_month": 16.5, "3_months": 17.0, "6_months": 17.5, "1_year": 18.0, "2_years": 17.8, "3_years": 17.5}},
+            {bank_id: 1000, bank_name: "ВТБ", rates: {overnight: 15.3, "7_days": 15.8, "1_month": 16.3, "3_months": 16.8, "6_months": 17.3, "1_year": 17.8, "2_years": 17.6, "3_years": 17.3}},
+            {bank_id: 2764, bank_name: "Газпромбанк", rates: {overnight: 15.4, "7_days": 15.9, "1_month": 16.4, "3_months": 16.9, "6_months": 17.4, "1_year": 17.9, "2_years": 17.7, "3_years": 17.4}},
+            {bank_id: 1326, bank_name: "Альфа-Банк", rates: {overnight: 15.6, "7_days": 16.1, "1_month": 16.6, "3_months": 17.1, "6_months": 17.6, "1_year": 18.1, "2_years": 17.9, "3_years": 17.6}},
+            {bank_id: 2429, bank_name: "Россельхозбанк", rates: {overnight: 15.2, "7_days": 15.7, "1_month": 16.2, "3_months": 16.7, "6_months": 17.2, "1_year": 17.7, "2_years": 17.5, "3_years": 17.2}},
+            {bank_id: 2929, bank_name: "МКБ", rates: {overnight: 15.5, "7_days": 16.0, "1_month": 16.5, "3_months": 17.0, "6_months": 17.5, "1_year": 18.0, "2_years": 17.8, "3_years": 17.5}},
+            {bank_id: 323, bank_name: "Промсвязьбанк", rates: {overnight: 15.3, "7_days": 15.8, "1_month": 16.3, "3_months": 16.8, "6_months": 17.3, "1_year": 17.8, "2_years": 17.6, "3_years": 17.3}},
+            {bank_id: 1516, bank_name: "Совкомбанк", rates: {overnight: 15.7, "7_days": 16.2, "1_month": 16.7, "3_months": 17.2, "6_months": 17.7, "1_year": 18.2, "2_years": 18.0, "3_years": 17.7}},
+            {bank_id: 2272, bank_name: "Т-Банк", rates: {overnight: 15.8, "7_days": 16.3, "1_month": 16.8, "3_months": 17.3, "6_months": 17.8, "1_year": 18.3, "2_years": 18.1, "3_years": 17.8}},
+            {bank_id: 2145, bank_name: "Росбанк", rates: {overnight: 15.4, "7_days": 15.9, "1_month": 16.4, "3_months": 16.9, "6_months": 17.4, "1_year": 17.9, "2_years": 17.7, "3_years": 17.4}},
+            {bank_id: 2748, bank_name: "Райффайзенбанк", rates: {overnight: 15.3, "7_days": 15.8, "1_month": 16.3, "3_months": 16.8, "6_months": 17.3, "1_year": 17.8, "2_years": 17.6, "3_years": 17.3}},
+            {bank_id: 1, bank_name: "ЮниКредит Банк", rates: {overnight: 15.2, "7_days": 15.7, "1_month": 16.2, "3_months": 16.7, "6_months": 17.2, "1_year": 17.7, "2_years": 17.5, "3_years": 17.2}},
+            {bank_id: 2177, bank_name: "Банк ФК Открытие", rates: {overnight: 15.5, "7_days": 16.0, "1_month": 16.5, "3_months": 17.0, "6_months": 17.5, "1_year": 18.0, "2_years": 17.8, "3_years": 17.5}}
+        ];
+
+        let selectedBankIndex = 0;
+        let selectedBanksForRates = depositRates.map(r => r.bank_id);
+
+        // Нормативы
+        const NORMATIVE_MIN = {
+            N1_0: 12.5,
+            N1_1: 9.0,
+            N1_2: 3.5
+        };
+
+        function calculateNormatives(record) {
+            return {
+                N1_0: (record.capital / record.assets) * 100,
+                N1_1: (record.core_capital / record.assets) * 100,
+                N1_2: (record.additional_capital / record.assets) * 100
+            };
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function formatNumber(value) {
+            return value.toLocaleString('ru-RU', { maximumFractionDigits: 1 });
+        }
+
+        function renderBankTabs() {
+            const container = document.getElementById('bankTabs');
+            container.innerHTML = banks.map((bank, index) => 
+                `<button class="bank-tab ${index === selectedBankIndex ? 'active' : ''}" onclick="selectBank(${index})">${bank.name}</button>`
+            ).join('');
+        }
+
+        function renderBankInfo() {
+            const bank = banks[selectedBankIndex];
+            const container = document.getElementById('bankInfo');
+            container.innerHTML = `
+                <h3>${bank.full_name}</h3>
+                <div class="bank-meta">
+                    <span>Лицензия ЦБ РФ: № ${bank.license}</span>
+                    <span>ID banki.ru: ${bank.bank_id}</span>
+                    <span style="background: #d1fae5; color: #059669; padding: 2px 10px; border-radius: 12px; font-weight: 600;">СЗКО ✓</span>
+                </div>
+            `;
+        }
+
+        function renderNormatives() {
+            const bank = banks[selectedBankIndex];
+            const latest = bank.data[bank.data.length - 1];
+            const n = calculateNormatives(latest);
+            
+            const container = document.getElementById('normativesGrid');
+            container.innerHTML = `
+                <div class="normative-card ${n.N1_0 >= NORMATIVE_MIN.N1_0 ? 'compliant' : 'non-compliant'}">
+                    <div class="normative-header">
+                        <span class="normative-name">Н1.0</span>
+                        <span>Достаточность капитала</span>
+                    </div>
+                    <div class="normative-value">${n.N1_0.toFixed(2)}%</div>
+                    <div class="normative-min">
+                        Мин.: ${NORMATIVE_MIN.N1_0}%
+                        ${n.N1_0 >= NORMATIVE_MIN.N1_0 ? '<span class="status-ok"> ✓ Соответствует</span>' : '<span class="status-fail"> ✗ Не соответствует</span>'}
+                    </div>
+                </div>
+                <div class="normative-card ${n.N1_1 >= NORMATIVE_MIN.N1_1 ? 'compliant' : 'non-compliant'}">
+                    <div class="normative-header">
+                        <span class="normative-name">Н1.1</span>
+                        <span>Достаточность осн. капитала</span>
+                    </div>
+                    <div class="normative-value">${n.N1_1.toFixed(2)}%</div>
+                    <div class="normative-min">
+                        Мин.: ${NORMATIVE_MIN.N1_1}%
+                        ${n.N1_1 >= NORMATIVE_MIN.N1_1 ? '<span class="status-ok"> ✓ Соответствует</span>' : '<span class="status-fail"> ✗ Не соответствует</span>'}
+                    </div>
+                </div>
+                <div class="normative-card ${n.N1_2 >= NORMATIVE_MIN.N1_2 ? 'compliant' : 'non-compliant'}">
+                    <div class="normative-header">
+                        <span class="normative-name">Н1.2</span>
+                        <span>Достаточность доп. капитала</span>
+                    </div>
+                    <div class="normative-value">${n.N1_2.toFixed(2)}%</div>
+                    <div class="normative-min">
+                        Мин.: ${NORMATIVE_MIN.N1_2}%
+                        ${n.N1_2 >= NORMATIVE_MIN.N1_2 ? '<span class="status-ok"> ✓ Соответствует</span>' : '<span class="status-fail"> ✗ Не соответствует</span>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMetricsTable() {
+            const bank = banks[selectedBankIndex];
+            const tbody = document.getElementById('metricsTableBody');
+            tbody.innerHTML = bank.data.map(row => {
+                const n = calculateNormatives(row);
+                return `
+                    <tr>
+                        <td>${formatDate(row.period)}</td>
+                        <td class="number-cell">${formatNumber(row.assets)}</td>
+                        <td class="number-cell">${formatNumber(row.capital)}</td>
+                        <td class="number-cell ${n.N1_0 >= NORMATIVE_MIN.N1_0 ? 'value-ok' : 'value-fail'}">${n.N1_0.toFixed(2)}%</td>
+                        <td class="number-cell ${n.N1_1 >= NORMATIVE_MIN.N1_1 ? 'value-ok' : 'value-fail'}">${n.N1_1.toFixed(2)}%</td>
+                        <td class="number-cell ${n.N1_2 >= NORMATIVE_MIN.N1_2 ? 'value-ok' : 'value-fail'}">${n.N1_2.toFixed(2)}%</td>
+                        <td class="number-cell">${formatNumber(row.profit)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderRateBankSelector() {
+            const container = document.getElementById('rateBankSelector');
+            container.innerHTML = `
+                <button class="selector-btn ${selectedBanksForRates.length === depositRates.length ? 'active' : ''}" onclick="selectAllBanks()">Все банки</button>
+                ${depositRates.map(rate => `
+                    <button class="selector-btn ${selectedBanksForRates.includes(rate.bank_id) ? 'active' : ''}" onclick="toggleBank(${rate.bank_id})">${rate.bank_name}</button>
+                `).join('')}
+            `;
+        }
+
+        function renderRatesTable() {
+            const tbody = document.getElementById('ratesTableBody');
+            const filteredRates = depositRates.filter(r => selectedBanksForRates.includes(r.bank_id));
+            tbody.innerHTML = filteredRates.map(rate => `
+                <tr>
+                    <td style="font-weight: 500;">${rate.bank_name}</td>
+                    <td class="number-cell rate-cell">${rate.rates.overnight}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["7_days"]}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["1_month"]}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["3_months"]}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["6_months"]}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["1_year"]}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["2_years"]}%</td>
+                    <td class="number-cell rate-cell">${rate.rates["3_years"]}%</td>
+                </tr>
+            `).join('');
+        }
+
+        function selectBank(index) {
+            selectedBankIndex = index;
+            renderBankTabs();
+            renderBankInfo();
+            renderNormatives();
+            renderMetricsTable();
+        }
+
+        function selectAllBanks() {
+            selectedBanksForRates = depositRates.map(r => r.bank_id);
+            renderRateBankSelector();
+            renderRatesTable();
+        }
+
+        function toggleBank(bankId) {
+            if (selectedBanksForRates.includes(bankId)) {
+                selectedBanksForRates = selectedBanksForRates.filter(id => id !== bankId);
+            } else {
+                selectedBanksForRates.push(bankId);
+            }
+            renderRateBankSelector();
+            renderRatesTable();
+        }
+
+        // Инициализация
+        renderBankTabs();
+        renderBankInfo();
+        renderNormatives();
+        renderMetricsTable();
+        renderRateBankSelector();
+        renderRatesTable();
+    </script>
+</body>
+</html>
