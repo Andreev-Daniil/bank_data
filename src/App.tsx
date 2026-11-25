@@ -75,6 +75,9 @@ function App() {
   const [selectedMetric, setSelectedMetric] = useState<string>('capital')
   const [sortField, setSortField] = useState<string>('period')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [selectedBanksForRates, setSelectedBanksForRates] = useState<number[]>(
+    depositRates.rates.map(r => r.bank_id)
+  )
 
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr)
@@ -498,6 +501,34 @@ function App() {
             <h2>Ставки по депозитам для юридических лиц</h2>
             <p className="section-subtitle">Актуальные ставки на {depositRates.metadata.date}</p>
           </div>
+          
+          {/* Bank Selector for Deposit Rates */}
+          <div className="bank-selector">
+            <div className="bank-selector-buttons">
+              <button
+                className={`selector-btn ${selectedBanksForRates.length === depositRates.rates.length ? 'active' : ''}`}
+                onClick={() => setSelectedBanksForRates(depositRates.rates.map(r => r.bank_id))}
+              >
+                Все банки
+              </button>
+              {depositRates.rates.map((bankRate) => (
+                <button
+                  key={bankRate.bank_id}
+                  className={`selector-btn ${selectedBanksForRates.includes(bankRate.bank_id) ? 'active' : ''}`}
+                  onClick={() => {
+                    if (selectedBanksForRates.includes(bankRate.bank_id)) {
+                      setSelectedBanksForRates(selectedBanksForRates.filter(id => id !== bankRate.bank_id))
+                    } else {
+                      setSelectedBanksForRates([...selectedBanksForRates, bankRate.bank_id])
+                    }
+                  }}
+                >
+                  {bankRate.bank_name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
@@ -514,19 +545,21 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {depositRates.rates.map((bankRate) => (
-                  <tr key={bankRate.bank_id}>
-                    <td className="bank-name-cell">{bankRate.bank_name}</td>
-                    <td className="number-cell rate-cell">{bankRate.rates.overnight}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['7_days']}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['1_month']}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['3_months']}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['6_months']}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['1_year']}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['2_years']}%</td>
-                    <td className="number-cell rate-cell">{bankRate.rates['3_years']}%</td>
-                  </tr>
-                ))}
+                {depositRates.rates
+                  .filter(bankRate => selectedBanksForRates.includes(bankRate.bank_id))
+                  .map((bankRate) => (
+                    <tr key={bankRate.bank_id}>
+                      <td className="bank-name-cell">{bankRate.bank_name}</td>
+                      <td className="number-cell rate-cell">{bankRate.rates.overnight}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['7_days']}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['1_month']}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['3_months']}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['6_months']}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['1_year']}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['2_years']}%</td>
+                      <td className="number-cell rate-cell">{bankRate.rates['3_years']}%</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

@@ -647,6 +647,39 @@ section h2 {
   margin-top: 4px;
 }
 
+/* Bank Selector for Deposit Rates */
+.bank-selector {
+  margin-bottom: 20px;
+}
+
+.bank-selector-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selector-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.selector-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.selector-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
 .rate-cell {
   font-weight: 600;
   color: var(--success);
